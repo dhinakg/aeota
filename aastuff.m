@@ -62,8 +62,7 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        // create directory
-        AAByteStream stream = AAFileStreamOpenWithPath(archive_path.UTF8String, 0, 420);
+        AAByteStream stream = AAFileStreamOpenWithPath(archive_path.UTF8String, 0, 0644);
         if (!stream) {
             NSLog(@"Failed to open archive file stream");
             return 1;
