@@ -28,9 +28,13 @@ make
 ./aastuff <path to AEA> <output folder> <key in base64>
 ```
 
+## Related Projects
+
+- [aea1meta - Siguza](https://github.com/Siguza/aea1meta)
+
 ## Credits
 
-- Siguza
-- Nicolas
-- Snoolie
-- Flagers
+- Siguza - auth data parsing strategy
+- Nicolas - original HPKE code
+- Snoolie - auth data parsing strategy
+- Flagers - AppleArchive assistance
