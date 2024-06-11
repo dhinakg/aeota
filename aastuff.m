@@ -7,6 +7,8 @@
 
 __BEGIN_DECLS
 
+// TODO: Figure out how this is different from normal AppleArchive
+
 typedef void* AAAssetExtractor;
 
 AAAssetExtractor AAAssetExtractorCreate(const char* destDir, void** something, int something2);
