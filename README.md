@@ -8,7 +8,7 @@ Gets a key from an AEA (non OTA; for OTAs, use the key that is provided with you
 
 ```shell
 pip3 install -r requirements.txt
-python get_key.py <path to AEA>
+python3 get_key.py <path to AEA>
 ```
 
 ## Decrypting/extracting an AEA
