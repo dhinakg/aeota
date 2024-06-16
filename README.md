@@ -28,6 +28,17 @@ make
 ./aastuff <path to AEA> <output folder> <key in base64>
 ```
 
+`aastuff` can also handle unencrypted OTAs:
+
+```shell
+aea decrypt -i <path to AEA> -o <decrypted AAR>  -key-value 'base64:<key in base64>'
+./aastuff <decrypted AAR> <output folder>
+```
+
+## Notes
+
+
+
 ## Related Projects
 
 - [aea1meta - Siguza](https://github.com/Siguza/aea1meta)
