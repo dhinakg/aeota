@@ -23,9 +23,7 @@ __END_DECLS
 
 int extractAsset(AAByteStream stream, NSString* outputDirectory) {
     void* something = NULL;
-    NSLog(@"something before: %p", something);
     AAAssetExtractor extractor = AAAssetExtractorCreate(outputDirectory.UTF8String, &something, 0LL);
-    NSLog(@"something after: %p", something);
     if (!extractor) {
         NSLog(@"Failed to create asset extractor");
         return 1;
