@@ -7,6 +7,8 @@ AEA OTA/IPSW decryption
 Gets a key from an AEA (non OTA; for OTAs, use the key that is provided with your response).
 
 ```shell
+python3 -m venv .env
+source .env/bin/activate
 pip3 install -r requirements.txt
 python3 get_key.py <path to AEA>
 ```
