@@ -42,6 +42,10 @@ with aea_path.open("rb") as f:
 
     auth_data_blob_size = int.from_bytes(header[8:12], "little")
 
+    if auth_data_blob_size == 0:
+        print("No auth data blob")
+        exit(1)
+
     auth_data_blob = f.read(auth_data_blob_size)
     if len(auth_data_blob) != auth_data_blob_size:
         print(f"Expected {auth_data_blob_size} bytes, got {len(auth_data_blob)}")

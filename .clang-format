@@ -1,0 +1,17 @@
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 140
+DerivePointerAlignment: false
+PointerAlignment: Left
+ExperimentalAutoDetectBinPacking: true
+SpaceBeforeCpp11BracedList: true
+IndentPPDirectives: BeforeHash
+---
+Language: ObjC
+# Force pointers to the type for C++.
+AlignArrayOfStructures: None
+SpacesInContainerLiterals: false
+BreakStringLiterals: false
+ObjCBreakBeforeNestedBlockParam: false
+ObjCBlockIndentWidth: 4
+---

@@ -1,2 +1,8 @@
 aastuff
+aastuff_standalone
 *.dSYM/
+
+.DS_Store
+tests/
+tmp/
+.vscode/
