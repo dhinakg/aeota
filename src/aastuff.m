@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        bool isDirectory = false;
+        BOOL isDirectory = false;
         if (![fileManager fileExistsAtPath:outputDirectory isDirectory:&isDirectory]) {
             if (![fileManager createDirectoryAtPath:outputDirectory withIntermediateDirectories:NO attributes:nil error:&error]) {
                 ERRLOG(@"Failed to create directory: %@", error);
