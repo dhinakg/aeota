@@ -9,8 +9,8 @@ for i in tests/*; do
     i=$(basename "$i")
     echo "Testing $i"
     mkdir -p "tmp/$i/a" "tmp/$i/b"
-    ./aastuff "tests/$i/encrypted.aar" "tmp/$i/a" "$(cat tests/"$i"/key.txt)"
-    ./aastuff_standalone "tests/$i/encrypted.aar" "tmp/$i/b" "$(cat tests/"$i"/key.txt)"
+    ./aastuff "tests/$i/encrypted.aea" "tmp/$i/a" "$(cat tests/"$i"/key.txt)"
+    ./aastuff_standalone "tests/$i/encrypted.aea" "tmp/$i/b" "$(cat tests/"$i"/key.txt)"
     diff -r "tmp/$i/a" "tmp/$i/b" && echo "Test $i passed" || echo "Test $i failed"
 done
 
