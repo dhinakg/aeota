@@ -11,6 +11,7 @@ rm -rf tmp
 mkdir tmp
 
 for i in tests/*; do
+    i=$(basename "$i")
     echo "Testing $i"
     mkdir -p "tmp/$i"
     # Ensure expected key is valid first

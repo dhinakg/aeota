@@ -6,6 +6,7 @@ rm -rf tmp
 mkdir tmp
 
 for i in tests/*; do
+    i=$(basename "$i")
     echo "Testing $i"
     mkdir -p "tmp/$i/a" "tmp/$i/b"
     ./aastuff "tests/$i/encrypted.aar" "tmp/$i/a" "$(cat tests/"$i"/key.txt)"
