@@ -60,6 +60,9 @@ jobs:
           # rm tests/iPhone_15PM_18.0_22A5282m.ipsw
           printf "$IOS_IPSW_TEST_KEY" > tests/iOS_18_beta_1_IPSW/expected.txt
           xxd tests/iOS_18_beta_1_IPSW/expected.txt
+        env:
+          MACOS_OTA_TEST_KEY: ${{ vars.MACOS_OTA_TEST_KEY }}
+          IOS_IPSW_TEST_KEY: ${{ vars.IOS_IPSW_TEST_KEY }}
       - name: Run tests
         run: ./test_get_key.sh
 
@@ -90,6 +93,9 @@ jobs:
           # aria2c -x 16 -s 16 -j 16 --file-allocation=none "https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea" -o tests/large/encrypted.aea
           printf "$LARGE_TEST_KEY" > tests/large/key.txt
           xxd tests/large/key.txt
+        env:
+          SMALL_TEST_KEY: ${{ vars.SMALL_TEST_KEY }}
+          LARGE_TEST_KEY: ${{ vars.LARGE_TEST_KEY }}
       - name: Build
         run: make
       - name: Run tests
