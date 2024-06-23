@@ -1,0 +1,100 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-12, macos-13, macos-14]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make
+      - name: Test binary
+        run: |
+          ./aastuff
+          ./aastuff_standalone
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS artifacts for ${{ matrix.os }}
+          path: aastuff*
+
+  test-get-key:
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      - name: Cache test files
+        id: cache
+        uses: actions/cache@v4
+        with:
+          key: test-get-key-files
+          path: |
+            tests
+      - name: Download test files
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          brew install aria2
+          mkdir tests tests/macOS_15_beta_1_OTA tests/iOS_18_beta_1_IPSW/
+          # curl -L "https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea" -o tests/macOS_15_beta_1_OTA/encrypted.aea
+          aria2c -x 16 -s 16 -j 16 --file-allocation=none "https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea" -o tests/macOS_15_beta_1_OTA/encrypted.aea
+          printf "$MACOS_OTA_TEST_KEY" > tests/macOS_15_beta_1_OTA/expected.txt
+          # curl -L "https://updates.cdn-apple.com/2024SummerSeed/fullrestores/052-34764/D5D3D10C-E557-4A46-8EBD-290411A228AA/iPhone16,2_18.0_22A5282m_Restore.ipsw" -o tests/iPhone_15PM_18.0_22A5282m.ipsw
+          aria2c -x 16 -s 16 -j 16 --file-allocation=none "https://updates.cdn-apple.com/2024SummerSeed/fullrestores/052-34764/D5D3D10C-E557-4A46-8EBD-290411A228AA/iPhone16,2_18.0_22A5282m_Restore.ipsw" -o tests/iPhone_15PM_18.0_22A5282m.ipsw
+          unzip -p tests/iPhone_15PM_18.0_22A5282m.ipsw 090-29713-049.dmg.aea > tests/iOS_18_beta_1_IPSW/encrypted.aea
+          rm tests/iPhone_15PM_18.0_22A5282m.ipsw
+          printf "$IOS_IPSW_TEST_KEY" > tests/iOS_18_beta_1_IPSW/expected.txt
+        env:
+          MACOS_OTA_TEST_KEY: ${{ vars.MACOS_OTA_TEST_KEY }}
+          IOS_IPSW_TEST_KEY: ${{ vars.IOS_IPSW_TEST_KEY }}
+      - name: Run tests
+        run: ./test_get_key.sh
+
+  test-aastuff:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache test files
+        id: cache
+        uses: actions/cache@v4
+        with:
+          key: test-aastuff-files
+          path: |
+            tests
+      - name: Download test files
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          brew install aria2
+          mkdir tests tests/small tests/large
+          # This file uses a compressed inner layer 
+          # curl -L "https://updates.cdn-apple.com/2024/Iris/mobileassets/003-49672/A1233F60-3D17-491B-803A-DB26E20695AE/com_apple_MobileAsset_UAF_Siri_Understanding/6FF3BAF0-FBEF-4C01-BB0E-30CD61DAFCC4.aar" -o tests/small/encrypted.aea
+          aria2c -x 16 -s 16 -j 16 --file-allocation=none "https://updates.cdn-apple.com/2024/Iris/mobileassets/003-49672/A1233F60-3D17-491B-803A-DB26E20695AE/com_apple_MobileAsset_UAF_Siri_Understanding/6FF3BAF0-FBEF-4C01-BB0E-30CD61DAFCC4.aar" -o tests/small/encrypted.aea
+          printf "$SMALL_TEST_KEY" > tests/small/key.txt
+          # This file uses a raw inner layer
+          # curl -L "https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea" -o tests/large/encrypted.aea
+          aria2c -x 16 -s 16 -j 16 --file-allocation=none "https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea" -o tests/large/encrypted.aea
+          printf "$LARGE_TEST_KEY" > tests/large/key.txt
+        env:
+          SMALL_TEST_KEY: ${{ vars.SMALL_TEST_KEY }}
+          LARGE_TEST_KEY: ${{ vars.LARGE_TEST_KEY }}
+      - name: Build
+        run: make
+      - name: Run tests
+        run: ./test_extract.sh

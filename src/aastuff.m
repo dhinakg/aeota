@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
         if (argc < 3) {
             ERRLOG(@"Usage: %s <archive> <output directory> [key in base64]", argv[0]);
             ERRLOG(@"Key is required for encrypted archives");
-            return 1;
+            return argc == 1 ? 0 : 1;
         }
 
         NSString* archivePath = [NSString stringWithUTF8String:argv[1]];
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        bool isDirectory = false;
+        BOOL isDirectory = false;
         if (![fileManager fileExistsAtPath:outputDirectory isDirectory:&isDirectory]) {
             if (![fileManager createDirectoryAtPath:outputDirectory withIntermediateDirectories:NO attributes:nil error:&error]) {
                 ERRLOG(@"Failed to create directory: %@", error);
