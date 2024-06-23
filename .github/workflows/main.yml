@@ -32,9 +32,9 @@ jobs:
     steps:
       - run: |
           cat <<EOF >> links.txt
-          "https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea"
-          aria2c -x 16 -s 16 -j 16 --file-allocation=none "https://updates.cdn-apple.com/2024SummerSeed/fullrestores/052-34764/D5D3D10C-E557-4A46-8EBD-290411A228AA/iPhone16,2_18.0_22A5282m_Restore.ipsw"
-          aria2c -x 16 -s 16 -j 16 --file-allocation=none "https://updates.cdn-apple.com/2024/Iris/mobileassets/003-49672/A1233F60-3D17-491B-803A-DB26E20695AE/com_apple_MobileAsset_UAF_Siri_Understanding/6FF3BAF0-FBEF-4C01-BB0E-30CD61DAFCC4.aar
+          https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea
+          https://updates.cdn-apple.com/2024SummerSeed/fullrestores/052-34764/D5D3D10C-E557-4A46-8EBD-290411A228AA/iPhone16,2_18.0_22A5282m_Restore.ipsw
+          https://updates.cdn-apple.com/2024/Iris/mobileassets/003-49672/A1233F60-3D17-491B-803A-DB26E20695AE/com_apple_MobileAsset_UAF_Siri_Understanding/6FF3BAF0-FBEF-4C01-BB0E-30CD61DAFCC4.aar
           EOF
           aria2c -x 16 -s 16 -j 16 --file-allocation=none -i links.txt
       - uses: actions/upload-artifact@v4
