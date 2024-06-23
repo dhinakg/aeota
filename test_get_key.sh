@@ -17,7 +17,7 @@ for i in tests/*; do
     # Ensure expected key is valid first
     aea decrypt -i "tests/$i/encrypted.aea" -o "tmp/decrypted" -key-value "base64:$(cat tests/"$i"/expected.txt)" || abort "Failed to decrypt with expected key"
     # Get the key
-    python3 get_key.py "tests/$i/encrypted.aea" > "tmp/$1/actual.txt" || abort "Failed to get key"
+    python3 get_key.py "tests/$i/encrypted.aea" > "tmp/$i/actual.txt" || abort "Failed to get key"
     # Ensure the key is correct
     aea decrypt -i "tests/$i/encrypted.aea" -o "tmp/decrypted" -key-value "base64:$(cat tmp/"$i"/actual.txt)" || abort "Failed to decrypt with actual key"
     if diff -q "tmp/$i/actual.txt" "tests/$i/expected.txt"; then
