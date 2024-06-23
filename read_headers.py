@@ -74,6 +74,14 @@ class AAFieldKeys(enum.Enum):
     SIZE = AAFieldKey("SIZ", AAFieldTypes.UINT)
     ENTRY_OFFSET = AAFieldKey("IDX", AAFieldTypes.UINT)
     ENTRY_SIZE = AAFieldKey("IDZ", AAFieldTypes.UINT)
+    PATH = AAFieldKey("PAT", AAFieldTypes.STRING)
+    LINK_PATH = AAFieldKey("LNK", AAFieldTypes.STRING)
+    FLAGS = AAFieldKey("FLG", AAFieldTypes.UINT)
+    UID = AAFieldKey("UID", AAFieldTypes.UINT)
+    GID = AAFieldKey("GID", AAFieldTypes.UINT)
+    MODE = AAFieldKey("MOD", AAFieldTypes.UINT)
+    MODIFICATION_TIME = AAFieldKey("MTM", AAFieldTypes.TIMESPEC)
+    CREATION_TIME = AAFieldKey("CTM", AAFieldTypes.TIMESPEC)
 
     @classmethod
     def _missing_(cls, value):
@@ -189,8 +197,12 @@ def scan_range(view: memoryview, indent="", offset=0):
 
                         idx += size
                         blob_size += size
+                    elif key.type == AAFieldTypes.TIMESPEC:
+                        # TODO: Figure out how to represent this
+                        size = {"S": 8, "T": 12}[subtype]
+                        val = int.from_bytes(fields.read(size), "little")
                     else:
-                        raise ValueError(f"Unknown key type: {key}")
+                        raise ValueError(f"Unknown key type: {key.type}")
 
                     parsed_fields[key] = val
 
@@ -199,6 +211,7 @@ def scan_range(view: memoryview, indent="", offset=0):
                 if AAFieldKeys.DATA.value in parsed_fields:
                     blob_start, blob_size = parsed_fields[AAFieldKeys.DATA.value]
                     with view[blob_start : blob_start + 4] as inner_magic:
+                        # TODO: This does not handle compressed blobs
                         if inner_magic == b"AA01":
                             scan_range(view[blob_start : blob_start + blob_size], indent + "  ", offset + blob_start)
 
