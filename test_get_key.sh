@@ -20,7 +20,7 @@ for i in tests/*; do
     python3 get_key.py "tests/$i/encrypted.aea" > "tmp/$i/actual.txt" || abort "Failed to get key"
     # Ensure the key is correct
     aea decrypt -i "tests/$i/encrypted.aea" -o "tmp/decrypted" -key-value "base64:$(cat tmp/"$i"/actual.txt)" || abort "Failed to decrypt with actual key"
-    if diff -q "tmp/$i/actual.txt" "tests/$i/expected.txt"; then
+    if ! diff "tmp/$i/actual.txt" "tests/$i/expected.txt"; then
         echo "Warning: key does not match expected key, but decryption was successful"
     fi
     echo "Test $i passed"
