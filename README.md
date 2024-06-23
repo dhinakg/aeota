@@ -56,7 +56,7 @@ For now, both are built and used in the same way. Once `aastuff_standalone` is f
 
 ## Related Projects
 
-- [aea1meta - Siguza](https://github.com/Siguza/aea1meta)
+- [aea1 - Siguza](https://github.com/Siguza/aea1)
 
 ## Credits
 
