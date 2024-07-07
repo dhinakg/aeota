@@ -5,17 +5,17 @@
 // TODO: Cleanup
 // TODO: Work on filtering
 
-typedef struct inner_archive_data {
+typedef struct nested_archive_data {
     AAArchiveStream stream;
     uint64_t size;
-}* inner_archive_data;
+}* nested_archive_data;
 
-AAByteStream inner_archive_open(AAArchiveStream stream, uint64_t size);
-int inner_archive_close(void* stream);
-ssize_t inner_archive_read(void* stream, void* buf, size_t nbyte);
+AAByteStream nested_archive_open(AAArchiveStream stream, uint64_t size);
+int nested_archive_close(void* stream);
+ssize_t nested_archive_read(void* stream, void* buf, size_t nbyte);
 
-AAByteStream inner_archive_open(AAArchiveStream stream, uint64_t size) {
-    inner_archive_data data = malloc(sizeof(struct inner_archive_data));
+AAByteStream nested_archive_open(AAArchiveStream stream, uint64_t size) {
+    nested_archive_data data = malloc(sizeof(struct nested_archive_data));
     if (!data) {
         return NULL;
     }
@@ -29,15 +29,15 @@ AAByteStream inner_archive_open(AAArchiveStream stream, uint64_t size) {
         return NULL;
     }
 
-    AACustomByteStreamSetCloseProc(byteStream, inner_archive_close);
-    AACustomByteStreamSetReadProc(byteStream, inner_archive_read);
+    AACustomByteStreamSetCloseProc(byteStream, nested_archive_close);
+    AACustomByteStreamSetReadProc(byteStream, nested_archive_read);
     AACustomByteStreamSetData(byteStream, data);
 
     return byteStream;
 }
 
-int inner_archive_close(void* stream) {
-    inner_archive_data data = stream;
+int nested_archive_close(void* stream) {
+    nested_archive_data data = stream;
 
     if (data) {
         free(data);
@@ -45,8 +45,8 @@ int inner_archive_close(void* stream) {
     return 0;
 }
 
-ssize_t inner_archive_read(void* stream, void* buf, size_t nbyte) {
-    inner_archive_data data = stream;
+ssize_t nested_archive_read(void* stream, void* buf, size_t nbyte) {
+    nested_archive_data data = stream;
 
     size_t size = MIN(nbyte, data->size);
     if (!size) {
@@ -148,7 +148,7 @@ int extractAssetStandalone(AAByteStream byteStream, NSString* outputDirectory) {
                 continue;
             }
 
-            AAByteStream datStream = inner_archive_open(decodeStream, datSize);
+            AAByteStream datStream = nested_archive_open(decodeStream, datSize);
             if (!datStream) {
                 ERRLOG(@"Failed to open DAT stream");
                 break;
