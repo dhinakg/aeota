@@ -4,7 +4,7 @@ AEA OTA/IPSW decryption
 
 ## Grabbing keys with `get_key.py`
 
-Gets a key from an AEA (non OTA; for OTAs, use the key that is provided with your response, as they generally do not have embedded key acquisition metadata).
+Gets a key from an AEA (non OTA; for OTAs, use the key that is provided with your response, as they generally do not have embedded auth data).
 
 ```shell
 pip3 install -r requirements.txt
@@ -48,11 +48,14 @@ aea decrypt -i <path to AEA> -o <decrypted asset archive> -key-value 'base64:<ke
 
 Run `./aastuff -h` for full usage information.
 
+> [!NOTE]
+> `aastuff_standalone` has more features, including file listings and selective extraction. Run `./aastuff_standalone -h` for full usage information.
+
 ## Notes
 
 `aastuff` uses `AAAssetExtractor`, functions from `libAppleArchive` in order to extract asset archives. However, it is a pretty barren API and does not offer things like selective extraction.
 
-`aastuff_standalone` uses (mostly) standard `libAppleArchive` functions to extract asset archives. In the future (but not currently), it will be able to offer things such as file listings and selective extraction.
+`aastuff_standalone` uses (mostly) standard `libAppleArchive` functions to extract asset archives. It offers things such as file listings and selective extraction, but is not fully validated against all possible asset archives.
 
 For now, both are built and used in the same way. Once `aastuff_standalone` is fully functional and validated, `aastuff` will be deprecated.
 
