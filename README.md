@@ -37,14 +37,16 @@ Assets (including OTA updates) are constructed specially and cannot be extracted
 ```shell
 # Decrypt if necessary
 aea decrypt -i <path to AEA> -o <decrypted asset archive> -key-value 'base64:<key in base64>'
-./aastuff <decrypted asset archive> <output folder>
+./aastuff -i <decrypted asset archive> -o <output folder>
 ```
 
 `aastuff` can also handle asset archives that are not already decrypted:
 
 ```shell
-./aastuff <path to AEA> <output folder> <key in base64>
+./aastuff -i <path to AEA> -o <output folder> -k <key in base64>
 ```
+
+Run `./aastuff -h` for full usage information.
 
 ## Notes
 
