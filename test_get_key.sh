@@ -22,19 +22,20 @@ mkdir tmp
 
 for i in tests/*; do
     i=$(basename "$i")
+    TEST_DIR="tests/$i"
+    TMP_DIR="tmp/$i"
+
     echo "Testing $i"
-    if [ -e "tests/$i/skip_get_key" ]; then
+
+    if [ -e "$TEST_DIR/skip_get_key" ]; then
         echo "Skipping $i"
         echo ""
         continue
     fi
 
-    if [ -e "test/$i/fast_unsupported" ]; then
+    if [ -e "$TEST_DIR/fast_unsupported" ]; then
         FAST=0
     fi
-
-    TEST_DIR="tests/$i"
-    TMP_DIR="tmp/$i"
 
     mkdir -p "$TMP_DIR"
 

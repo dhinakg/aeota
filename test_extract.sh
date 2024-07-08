@@ -20,15 +20,16 @@ mkdir -p tmp
 
 for i in tests/*; do
     i=$(basename "$i")
+    TEST_DIR="tests/$i"
+    TMP_DIR="tmp/$i"
+
     echo "Testing $i"
-    if [ -f "tests/$i/skip_extract" ]; then
+
+    if [ -f "$TEST_DIR/skip_extract" ]; then
         echo "Skipping $i"
         echo ""
         continue
     fi
-
-    TEST_DIR="tests/$i"
-    TMP_DIR="tmp/$i"
 
     mkdir -p "$TMP_DIR/a" "$TMP_DIR/b"
 
