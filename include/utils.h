@@ -14,4 +14,12 @@
     #define DBGLOG(x, ...)
 #endif
 
+#if AASTUFF_STANDALONE
+    #define NAME @"aastuff_standalone"
+#else
+    #define NAME @"aastuff"
+#endif
+
+#define VERSION @"0.0.1"
+
 #endif /* UTILS_H */

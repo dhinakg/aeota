@@ -1,9 +1,9 @@
 .PHONY: all clean test deploy
 
-SRC_FILES = src/aastuff.m src/extract.m src/extract_standalone.m
+SRC_FILES = src/aastuff.m src/args.m src/extract.m src/extract_standalone.m
 HDR_FILES = include/AppleArchivePrivate.h include/extract.h include/extract_standalone.h
 
-CFLAGS = -fmodules -fobjc-arc -Iinclude -Wall -Werror
+CFLAGS = -fmodules -fobjc-arc -Iinclude -Wall -Werror -Wunreachable-code
 LDLIBS = -framework Foundation -lAppleArchive
 LDFLAGS = -Llib
 

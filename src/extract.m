@@ -1,12 +1,12 @@
 #import "extract.h"
+
 #import "AppleArchivePrivate.h"
 #import "utils.h"
 
 #define ALLOC_SIZE 0x100000uLL
 
-int extractAsset(AAByteStream stream, NSString* outputDirectory) {
-    void* something = NULL;
-    AAAssetExtractor extractor = AAAssetExtractorCreate(outputDirectory.UTF8String, &something, 0LL);
+int extractAsset(AAByteStream stream, ExtractionConfiguration* config) {
+    AAAssetExtractor extractor = AAAssetExtractorCreate(config.outputDirectory.UTF8String, NULL, NULL);
     if (!extractor) {
         ERRLOG(@"Failed to create asset extractor");
         return 1;
@@ -15,7 +15,7 @@ int extractAsset(AAByteStream stream, NSString* outputDirectory) {
     void* allocated = valloc(ALLOC_SIZE);
     if (!allocated) {
         ERRLOG(@"Failed to allocate memory");
-        AAAssetExtractorDestroy(extractor);
+        AAAssetExtractorDestroy(extractor, NULL);
         return 1;
     }
 
@@ -36,13 +36,13 @@ int extractAsset(AAByteStream stream, NSString* outputDirectory) {
         if (written != read) {
             ERRLOG(@"Data write mismatch: expected %zu, got %zu", read, written);
 
-            AAAssetExtractorDestroy(extractor);
+            AAAssetExtractorDestroy(extractor, NULL);
             free(allocated);
             return 1;
         }
     }
 
-    AAAssetExtractorDestroy(extractor);
+    AAAssetExtractorDestroy(extractor, NULL);
     free(allocated);
     return 0;
 }
