@@ -1,9 +1,11 @@
 #ifndef EXTRACT_H
 #define EXTRACT_H
 
-#include <AppleArchive/AppleArchive.h>
-#include <Foundation/Foundation.h>
+#import <AppleArchive/AppleArchive.h>
+#import <Foundation/Foundation.h>
 
-int extractAsset(AAByteStream stream, NSString* outputDirectory);
+#import "args.h"
+
+int extractAsset(AAByteStream stream, ExtractionConfiguration* config);
 
 #endif /* EXTRACT_H */

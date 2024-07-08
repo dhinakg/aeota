@@ -1,21 +1,22 @@
 #import "extract_standalone.h"
+
+#import <fnmatch.h>
+
 #import "AppleArchivePrivate.h"
+#import "args.h"
 #import "utils.h"
 
-// TODO: Cleanup
-// TODO: Work on filtering
-
-typedef struct inner_archive_data {
+typedef struct nested_archive_data {
     AAArchiveStream stream;
     uint64_t size;
-}* inner_archive_data;
+}* nested_archive_data;
 
-AAByteStream inner_archive_open(AAArchiveStream stream, uint64_t size);
-int inner_archive_close(void* stream);
-ssize_t inner_archive_read(void* stream, void* buf, size_t nbyte);
+AAByteStream nested_archive_open(AAArchiveStream stream, uint64_t size);
+int nested_archive_close(void* stream);
+ssize_t nested_archive_read(void* stream, void* buf, size_t nbyte);
 
-AAByteStream inner_archive_open(AAArchiveStream stream, uint64_t size) {
-    inner_archive_data data = malloc(sizeof(struct inner_archive_data));
+AAByteStream nested_archive_open(AAArchiveStream stream, uint64_t size) {
+    nested_archive_data data = malloc(sizeof(struct nested_archive_data));
     if (!data) {
         return NULL;
     }
@@ -29,15 +30,15 @@ AAByteStream inner_archive_open(AAArchiveStream stream, uint64_t size) {
         return NULL;
     }
 
-    AACustomByteStreamSetCloseProc(byteStream, inner_archive_close);
-    AACustomByteStreamSetReadProc(byteStream, inner_archive_read);
+    AACustomByteStreamSetCloseProc(byteStream, nested_archive_close);
+    AACustomByteStreamSetReadProc(byteStream, nested_archive_read);
     AACustomByteStreamSetData(byteStream, data);
 
     return byteStream;
 }
 
-int inner_archive_close(void* stream) {
-    inner_archive_data data = stream;
+int nested_archive_close(void* stream) {
+    nested_archive_data data = stream;
 
     if (data) {
         free(data);
@@ -45,8 +46,8 @@ int inner_archive_close(void* stream) {
     return 0;
 }
 
-ssize_t inner_archive_read(void* stream, void* buf, size_t nbyte) {
-    inner_archive_data data = stream;
+ssize_t nested_archive_read(void* stream, void* buf, size_t nbyte) {
+    nested_archive_data data = stream;
 
     size_t size = MIN(nbyte, data->size);
     if (!size) {
@@ -59,7 +60,65 @@ ssize_t inner_archive_read(void* stream, void* buf, size_t nbyte) {
     return size;
 }
 
-int extractAssetStandalone(AAByteStream byteStream, NSString* outputDirectory) {
+#if DEBUG
+static inline NSString* messageToString(AAEntryMessage message) {
+    NSDictionary* map = @{
+        @(AA_ENTRY_MESSAGE_SEARCH_PRUNE_DIR): @"SEARCH_PRUNE_DIR",
+        @(AA_ENTRY_MESSAGE_SEARCH_EXCLUDE): @"SEARCH_EXCLUDE",
+        @(AA_ENTRY_MESSAGE_SEARCH_FAIL): @"SEARCH_FAIL",
+        @(AA_ENTRY_MESSAGE_EXTRACT_BEGIN): @"EXTRACT_BEGIN",
+        @(AA_ENTRY_MESSAGE_EXTRACT_END): @"EXTRACT_END",
+        @(AA_ENTRY_MESSAGE_EXTRACT_FAIL): @"EXTRACT_FAIL",
+        @(AA_ENTRY_MESSAGE_EXTRACT_ATTRIBUTES): @"EXTRACT_ATTRIBUTES",
+        @(AA_ENTRY_MESSAGE_EXTRACT_XAT): @"EXTRACT_XAT",
+        @(AA_ENTRY_MESSAGE_EXTRACT_ACL): @"EXTRACT_ACL",
+        @(AA_ENTRY_MESSAGE_ENCODE_SCANNING): @"ENCODE_SCANNING",
+        @(AA_ENTRY_MESSAGE_ENCODE_WRITING): @"ENCODE_WRITING",
+        @(AA_ENTRY_MESSAGE_CONVERT_EXCLUDE): @"CONVERT_EXCLUDE",
+        @(AA_ENTRY_MESSAGE_PROCESS_EXCLUDE): @"PROCESS_EXCLUDE",
+        @(AA_ENTRY_MESSAGE_DECODE_READING): @"DECODE_READING"
+    };
+
+    return map[@(message)] ? map[@(message)] : @"Unknown";
+}
+#endif
+
+static int aa_callback(void* arg, AAEntryMessage message, const char* path, void* data) {
+    ExtractionConfiguration* config = (__bridge ExtractionConfiguration*)arg;
+
+    DBGLOG(@"[%@] Message: %@ (%d), Path: %s", config.function, messageToString(message), message, path);
+
+    if (config.regex) {
+        // TODO: Implement
+        abort();
+    } else if (config.filter) {
+        int ret = fnmatch(config.filter.UTF8String, path, 0);
+        DBGLOG(@"[%@] Path: %s, Filter: %@, Ret: %@", config.function, path, config.filter,
+               ret == 0 ? @"Match" : (ret == FNM_NOMATCH ? @"No match" : @"Error"));
+        if (ret != 0 && message == AA_ENTRY_MESSAGE_EXTRACT_BEGIN) {
+            return 1;
+        }
+    }
+
+    if (config.list) {
+        if (message == AA_ENTRY_MESSAGE_EXTRACT_BEGIN) {
+            // Do not continue extraction
+            LOG(@"%s", path);
+            return 1;
+        } else if (message == AA_ENTRY_MESSAGE_PROCESS_EXCLUDE) {
+            // This occurs before extraction begins, so we want this to continue
+            return 0;
+        } else {
+            // Skip all other steps of extraction
+            return 1;
+        }
+    }
+
+    // Continue
+    return 0;
+}
+
+int extractAssetStandalone(AAByteStream byteStream, ExtractionConfiguration* config) {
     AAArchiveStream decodeStream = AADecodeArchiveInputStreamOpen(byteStream, NULL, NULL, 0, 0);
     if (!decodeStream) {
         ERRLOG(@"Failed to open archive decode stream");
@@ -113,7 +172,7 @@ int extractAssetStandalone(AAByteStream byteStream, NSString* outputDirectory) {
         // maybe label?
         int lblIndex = AAHeaderGetKeyIndex(header, AA_FIELD_C("LBL"));
         if (lblIndex == -1) {
-            ERRLOG(@"Failed to find LBL key index");
+            DBGLOG(@"Failed to find LBL key index");
             continue;
         }
 
@@ -132,70 +191,81 @@ int extractAssetStandalone(AAByteStream byteStream, NSString* outputDirectory) {
         DBGLOG(@"Processing %c entry", (char)yop);
 
         if (yop == AA_YOP_TYPE_EXTRACT || yop == AA_YOP_TYPE_DST_FIXUP) {
-            // TODO: Maybe extract this into a function
-            AAFieldKeySet keySet = AAFieldKeySetCreate();
+            if (config.list && yop == AA_YOP_TYPE_DST_FIXUP) {
+                DBGLOG(@"Skipping DST_FIXUP entry as we are listing only");
+            } else {
+                // TODO: Maybe extract this into a function
+                AAFieldKeySet keySet = AAFieldKeySetCreate();
 
-            int datIndex = AAHeaderGetKeyIndex(header, AA_FIELD_DAT);
-            if (datIndex == -1) {
-                ERRLOG(@"Failed to find DAT key index");
-                continue;
-            }
+                int datIndex = AAHeaderGetKeyIndex(header, AA_FIELD_DAT);
+                if (datIndex == -1) {
+                    ERRLOG(@"Failed to find DAT key index");
+                    continue;
+                }
 
-            uint64_t datSize = -1;
-            uint64_t datOffset = -1;
-            if (AAHeaderGetFieldBlob(header, datIndex, &datSize, &datOffset) != 0) {
-                ERRLOG(@"Failed to get DAT");
-                continue;
-            }
+                uint64_t datSize = -1;
+                uint64_t datOffset = -1;
+                if (AAHeaderGetFieldBlob(header, datIndex, &datSize, &datOffset) != 0) {
+                    ERRLOG(@"Failed to get DAT");
+                    continue;
+                }
 
-            AAByteStream datStream = inner_archive_open(decodeStream, datSize);
-            if (!datStream) {
-                ERRLOG(@"Failed to open DAT stream");
-                break;
-            }
+                AAByteStream datStream = nested_archive_open(decodeStream, datSize);
+                if (!datStream) {
+                    ERRLOG(@"Failed to open DAT stream");
+                    break;
+                }
 
-            AAByteStream decompressStream = AADecompressionInputStreamOpen(datStream, 0, 0);
-            if (!decompressStream) {
-                ERRLOG(@"Failed to open decompress stream");
-                AAByteStreamClose(datStream);
-                break;
-            }
+                AAByteStream decompressStream = AADecompressionInputStreamOpen(datStream, 0, 0);
+                if (!decompressStream) {
+                    ERRLOG(@"Failed to open decompress stream");
+                    AAByteStreamClose(datStream);
+                    break;
+                }
 
-            AAArchiveStream innerDecodeStream = AADecodeArchiveInputStreamOpen(decompressStream, NULL, NULL, 0, 1);
-            if (!innerDecodeStream) {
-                ERRLOG(@"Failed to open inner decode stream");
-                AAByteStreamClose(decompressStream);
-                AAByteStreamClose(datStream);
-                break;
-            }
+                AAArchiveStream innerDecodeStream = AADecodeArchiveInputStreamOpen(decompressStream, NULL, NULL, 0, 1);
+                if (!innerDecodeStream) {
+                    ERRLOG(@"Failed to open inner decode stream");
+                    AAByteStreamClose(decompressStream);
+                    AAByteStreamClose(datStream);
+                    break;
+                }
 
-            // TODO: What is the difference between these two?
-            AAArchiveStream extractStream =
-                yop == AA_YOP_TYPE_DST_FIXUP
-                    ? AAVerifyDirectoryArchiveOutputStreamOpen(outputDirectory.UTF8String, keySet, NULL, NULL, UINT64_C(1) << 53, 0)
-                    : AAExtractArchiveOutputStreamOpen(outputDirectory.UTF8String, NULL, NULL, 0, 0);
-            if (!extractStream) {
-                ERRLOG(@"Failed to open extract stream");
-                AAArchiveStreamClose(innerDecodeStream);
-                AAByteStreamClose(decompressStream);
-                AAByteStreamClose(datStream);
-                break;
-            }
+                // TODO: What is the difference between these two?
+                // TODO: Magic constant
+                // TODO: CFBridgingRetain will leak
+                AAArchiveStream extractStream =
+                    yop == AA_YOP_TYPE_DST_FIXUP
+                        ? AAVerifyDirectoryArchiveOutputStreamOpen(config.outputDirectory.UTF8String, keySet,
+                                                                   (void*)CFBridgingRetain([config copyWithFunction:@"VERIFY"]),
+                                                                   aa_callback, UINT64_C(1) << 53, 0)
+                        : AAExtractArchiveOutputStreamOpen(config.outputDirectory.UTF8String,
+                                                           (void*)CFBridgingRetain([config copyWithFunction:@"EXTRACT"]), aa_callback, 0,
+                                                           0);
+                if (!extractStream) {
+                    ERRLOG(@"Failed to open extract stream");
+                    AAArchiveStreamClose(innerDecodeStream);
+                    AAByteStreamClose(decompressStream);
+                    AAByteStreamClose(datStream);
+                    break;
+                }
 
-            if (AAArchiveStreamProcess(innerDecodeStream, extractStream, NULL, NULL, 0, 0) < 0) {
-                ERRLOG(@"Failed to process archive stream");
+                if (AAArchiveStreamProcess(innerDecodeStream, extractStream, (void*)CFBridgingRetain([config copyWithFunction:@"PROCESS"]),
+                                           aa_callback, 0, 0) < 0) {
+                    ERRLOG(@"Failed to process archive stream");
+                    AAArchiveStreamClose(extractStream);
+                    AAArchiveStreamClose(innerDecodeStream);
+                    AAByteStreamClose(decompressStream);
+                    AAByteStreamClose(datStream);
+                    break;
+                }
+
                 AAArchiveStreamClose(extractStream);
                 AAArchiveStreamClose(innerDecodeStream);
                 AAByteStreamClose(decompressStream);
                 AAByteStreamClose(datStream);
-                break;
+                AAFieldKeySetDestroy(keySet);
             }
-
-            AAArchiveStreamClose(extractStream);
-            AAArchiveStreamClose(innerDecodeStream);
-            AAByteStreamClose(decompressStream);
-            AAByteStreamClose(datStream);
-            AAFieldKeySetDestroy(keySet);
         } else {
             ERRLOG(@"Unknown YOP: %llx", yop);
 #if DEBUG
