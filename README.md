@@ -4,7 +4,10 @@ AEA OTA/IPSW decryption
 
 ## Grabbing keys with `get_key.py`
 
-Gets a key from an AEA (non OTA; for OTAs, use the key that is provided with your response, as they generally do not have embedded auth data).
+Gets a key from the key URL embedded in an AEA's auth data blob.
+
+> [!NOTE]
+> OTAs before iOS 18.0 beta 3 did not have embedded auth data; for these OTAs, you must use the key provided with your response. macOS is the exception.
 
 ```shell
 pip3 install -r requirements.txt
