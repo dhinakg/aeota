@@ -89,8 +89,12 @@ static int aa_callback(void* arg, AAEntryMessage message, const char* path, void
     DBGLOG(@"[%@] Message: %@ (%d), Path: %s", config.function, messageToString(message), message, path);
 
     if (config.regex) {
-        // TODO: Implement
-        abort();
+        NSUInteger ret = [config.regex numberOfMatchesInString:[NSString stringWithUTF8String:path] options:0
+                                                         range:NSMakeRange(0, strlen(path))];
+        DBGLOG(@"[%@] Path: %s, Regex: %@, Ret: %@", config.function, path, config.regex, ret != 0 ? @"Match" : @"No match");
+        if (ret == 0 && message == AA_ENTRY_MESSAGE_EXTRACT_BEGIN) {
+            return 1;
+        }
     } else if (config.filter) {
         int ret = fnmatch(config.filter.UTF8String, path, 0);
         DBGLOG(@"[%@] Path: %s, Filter: %@, Ret: %@", config.function, path, config.filter,
