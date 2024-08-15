@@ -20,6 +20,6 @@
     #define NAME @"aastuff"
 #endif
 
-#define VERSION @"0.0.1"
+#define VERSION @"1.0.0"
 
 #endif /* UTILS_H */
