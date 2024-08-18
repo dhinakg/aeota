@@ -95,12 +95,14 @@ int fetchKey(AEAContext context, ExtractionConfiguration* config) {
         return 1;
     }
 
+    // Encapsulated symmetric key. This is what was used to encrypt the archive's encryption key. Also known as the shared secret.  
     NSData* encryptedRequest = [[NSData alloc] initWithBase64EncodedString:response[@"enc-request"] options:0];
     if (!encryptedRequest) {
         ERRLOG(@"Failed to decode encrypted request");
         return 1;
     }
 
+    // Wrapped archive encryption key. Also known as the message, encrypted data, or ciphertext.
     NSData* wrappedKey = [[NSData alloc] initWithBase64EncodedString:response[@"wrapped-key"] options:0];
     if (!wrappedKey) {
         ERRLOG(@"Failed to decode wrapped key");
@@ -109,9 +111,10 @@ int fetchKey(AEAContext context, ExtractionConfiguration* config) {
 
     DBGLOG(@"Key URL: %@", url);
     DBGLOG(@"Response data: %@", response);
-    DBGLOG(@"Encrypted request: %@", encryptedRequest);
-    DBGLOG(@"Wrapped key: %@", wrappedKey);
+    DBGLOG(@"Encrypted request (encapsulated symmetric key): %@", encryptedRequest);
+    DBGLOG(@"Wrapped key (ciphertext): %@", wrappedKey);
 
+    // Receipient's private key. The receipient's public key is what was used to encrypt the encapsulated symmetric key.
     NSData* privateKey = nil;
     PrivateKeyFormat privateKeyFormat = PrivateKeyFormatAll;
     if (config.unwrapKey) {
@@ -141,8 +144,9 @@ int fetchKey(AEAContext context, ExtractionConfiguration* config) {
         }
     }
 
-    DBGLOG(@"Private key: %@", privateKey);
+    DBGLOG(@"Private key (recepient's private key): %@", privateKey);
 
+    // The unwrapped encryption key. This is the data that was encrypted. Also known as the plaintext/cleartext.
     NSData* unwrappedKey = [HPKEWrapper unwrapPrivateKey:privateKey format:privateKeyFormat encryptedRequest:encryptedRequest
                                               wrappedKey:wrappedKey
                                                    error:&error];
@@ -151,7 +155,7 @@ int fetchKey(AEAContext context, ExtractionConfiguration* config) {
         return 1;
     }
 
-    DBGLOG(@"Unwrapped key: %@ (%@)", unwrappedKey, [unwrappedKey base64EncodedStringWithOptions:0]);
+    DBGLOG(@"Unwrapped key (cleartext): %@ (%@)", unwrappedKey, [unwrappedKey base64EncodedStringWithOptions:0]);
 
     config.key = unwrappedKey;
 
