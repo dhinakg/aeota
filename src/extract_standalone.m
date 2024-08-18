@@ -240,10 +240,10 @@ int extractAssetStandalone(AAByteStream byteStream, ExtractionConfiguration* con
                 // TODO: CFBridgingRetain will leak
                 AAArchiveStream extractStream =
                     yop == AA_YOP_TYPE_DST_FIXUP
-                        ? AAVerifyDirectoryArchiveOutputStreamOpen(config.outputDirectory.UTF8String, keySet,
+                        ? AAVerifyDirectoryArchiveOutputStreamOpen(config.outputPath.UTF8String, keySet,
                                                                    (void*)CFBridgingRetain([config copyWithFunction:@"VERIFY"]),
                                                                    aa_callback, UINT64_C(1) << 53, 0)
-                        : AAExtractArchiveOutputStreamOpen(config.outputDirectory.UTF8String,
+                        : AAExtractArchiveOutputStreamOpen(config.outputPath.UTF8String,
                                                            (void*)CFBridgingRetain([config copyWithFunction:@"EXTRACT"]), aa_callback, 0,
                                                            0);
                 if (!extractStream) {

@@ -1,6 +1,7 @@
 aastuff
 aastuff_standalone
 *.dSYM/
+obj/
 
 .DS_Store
 tests/

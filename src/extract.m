@@ -6,7 +6,7 @@
 #define ALLOC_SIZE 0x100000uLL
 
 int extractAsset(AAByteStream stream, ExtractionConfiguration* config) {
-    AAAssetExtractor extractor = AAAssetExtractorCreate(config.outputDirectory.UTF8String, NULL, NULL);
+    AAAssetExtractor extractor = AAAssetExtractorCreate(config.outputPath.UTF8String, NULL, NULL);
     if (!extractor) {
         ERRLOG(@"Failed to create asset extractor");
         return 1;
