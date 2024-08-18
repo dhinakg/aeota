@@ -57,7 +57,7 @@ def main(aea_path: Path, verbose: bool = False):
 
             key, value = field_blob[4:].split(b"\x00", 1)
 
-            fields[key] = value
+            fields[key.decode()] = value.decode()
 
             auth_data_blob = auth_data_blob[field_size:]
 
