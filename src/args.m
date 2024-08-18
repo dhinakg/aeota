@@ -11,38 +11,40 @@
 static void usage(void) {
     ERRLOG(@"Usage: %@ [options]", NAME);
     ERRLOG(@"Options:");
-#if AASTUFF_STANDALONE
-    ERRLOG(@"  -l, --list");
-    ERRLOG(@"      List the contents of the archive instead of extracting it");
-#endif
     ERRLOG(@"  -i, --input <archive>");
     ERRLOG(@"      Input archive to extract");
     ERRLOG(@"  -o, --output <directory or file>");
     ERRLOG(@"      Output directory for extracted files");
     ERRLOG(@"      If decrypt-only is set, output path for decrypted contents");
+#if AASTUFF_STANDALONE
+    ERRLOG(@"  -l, --list");
+    ERRLOG(@"      List the contents of the archive instead of extracting it");
+#endif
     ERRLOG(@"  -d, --decrypt-only");
     ERRLOG(@"      Only decrypt the archive, do not extract it");
-    ERRLOG(@"  -k, --key <base64>");
-    ERRLOG(@"      Decryption key in base64 format for encrypted archives");
-    ERRLOG(@"  -K, --key-file <path>");
-    ERRLOG(@"      Path to file containing raw decryption key for encrypted archives");
     ERRLOG(@"  -h, --help");
     ERRLOG(@"      Display this help message");
     ERRLOG(@"  -v, --version");
     ERRLOG(@"      Display the version number");
 #if AASTUFF_STANDALONE
+    ERRLOG(@"Filter Options:");
     ERRLOG(@"  -f, --filter <pattern>");
     ERRLOG(@"      Filter files by glob pattern");
     ERRLOG(@"  -r, --regex <pattern>");
     ERRLOG(@"      Filter files by regex pattern");
 #endif
+    ERRLOG(@"Key Options:");
+    ERRLOG(@"  -k, --key <base64>");
+    ERRLOG(@"      Decryption key in base64 format for encrypted archives");
+    ERRLOG(@"  -K, --key-file <path>");
+    ERRLOG(@"      Path to file containing raw decryption key for encrypted archives");
 #if HAS_HPKE
     ERRLOG(@"  -u, --unwrap <base64>");
     ERRLOG(@"      Unwrap decryption key using private key in base64 format");
     ERRLOG(@"  -U, --unwrap-key-file <path>");
     ERRLOG(@"      Unwrap decryption key using private key at path");
     ERRLOG(@"      --unwrap-key-format <format>");
-    ERRLOG(@"      Format of the unwrapped key (pem, der, x9.63/x963)");
+    ERRLOG(@"      Format of the private key (pem, der, x9.63/x963)");
     ERRLOG(@"      By default, each format is tried in order");
     ERRLOG(@"  -n, --network");
     ERRLOG(@"      Fetch private key using URL in auth data");
@@ -52,20 +54,20 @@ static void usage(void) {
 ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
     // clang-format off
     static struct option long_options[] = {
+        {"input", required_argument, 0, 'i'},
+        {"output", required_argument, 0, 'o'},
         #if AASTUFF_STANDALONE
         {"list", no_argument, 0, 'l'},
         #endif
-        {"input", required_argument, 0, 'i'},
-        {"output", required_argument, 0, 'o'},
         {"decrypt-only", no_argument, 0, 'd'},
-        {"key", required_argument, 0, 'k'},
-        {"key-file", required_argument, 0, 'K'},
         {"help", no_argument, 0, 'h'},
         {"version", no_argument, 0, 'v'},
         #if AASTUFF_STANDALONE
         {"filter", required_argument, 0, 'f'},
         {"regex", required_argument, 0, 'r'},
         #endif
+        {"key", required_argument, 0, 'k'},
+        {"key-file", required_argument, 0, 'K'},
         #if HAS_HPKE
         {"unwrap", required_argument, 0, 'u'},
         {"unwrap-key-file", required_argument, 0, 'U'},
@@ -92,27 +94,21 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
     NSString* unwrapKeyPath = nil;
     NSString* unwrapKeyFormatString = nil;
 
-    while ((c = getopt_long(argc, argv, "-li:o:dk:K:hvf:r:u:U:n", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "-i:o:ldhvf:r:k:K:u:U:n", long_options, &option_index)) != -1) {
         switch (c) {
-#if AASTUFF_STANDALONE
-            case 'l':
-                list = true;
-                break;
-#endif
             case 'i':
                 archivePath = [NSString stringWithUTF8String:optarg];
                 break;
             case 'o':
                 outputPath = [NSString stringWithUTF8String:optarg];
                 break;
+#if AASTUFF_STANDALONE
+            case 'l':
+                list = true;
+                break;
+#endif
             case 'd':
                 decryptOnly = true;
-                break;
-            case 'k':
-                keyBase64 = [NSString stringWithUTF8String:optarg];
-                break;
-            case 'K':
-                keyPath = [NSString stringWithUTF8String:optarg];
                 break;
             case 'h':
                 usage();
@@ -130,6 +126,12 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
                 regexString = [NSString stringWithUTF8String:optarg];
                 break;
 #endif
+            case 'k':
+                keyBase64 = [NSString stringWithUTF8String:optarg];
+                break;
+            case 'K':
+                keyPath = [NSString stringWithUTF8String:optarg];
+                break;
 #if HAS_HPKE
             case 'u':
                 unwrapKeyBase64 = [NSString stringWithUTF8String:optarg];
