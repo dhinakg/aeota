@@ -5,11 +5,12 @@
 
 # Requirements: pip3 install requests pyhpke
 
+import argparse
 import base64
 import json
-from pathlib import Path
-import argparse
 import sys
+from pathlib import Path
+from pprint import pprint
 
 import requests
 from pyhpke import AEADId, CipherSuite, KDFId, KEMId, KEMKey
@@ -54,18 +55,20 @@ def main(aea_path: Path, verbose: bool = False):
             field_size = int.from_bytes(auth_data_blob[:4], "little")
             field_blob = auth_data_blob[:field_size]
 
-            key_end = field_blob.index(b"\x00", 4)
-            key = field_blob[4:key_end].decode()
-            value = field_blob[key_end + 1 :].decode()
+            key, value = field_blob[4:].split(b"\x00", 1)
+
             fields[key] = value
 
             auth_data_blob = auth_data_blob[field_size:]
 
     if verbose:
-        print(fields, "\n", file=sys.stderr)
+        pprint(fields, stream=sys.stderr)
 
     if "com.apple.wkms.fcs-response" not in fields:
-        error("No fcs-response field found, is this from an OTA?")
+        error("No fcs-response field found!")
+
+    if "com.apple.wkms.fcs-key-url" not in fields:
+        error("No fcs-key-url field found!")
 
     fcs_response = json.loads(fields["com.apple.wkms.fcs-response"])
     enc_request = base64.b64decode(fcs_response["enc-request"])
