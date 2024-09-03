@@ -3,15 +3,27 @@
 
 #import <Foundation/Foundation.h>
 
+// This needs to be manually synced with the enum in hpke.swift
+typedef NS_ENUM(NSInteger, PrivateKeyFormat) {
+    PrivateKeyFormatAll,
+    PrivateKeyFormatPEM,
+    PrivateKeyFormatDER,
+    PrivateKeyFormatX963,
+};
+
 @interface ExtractionConfiguration : NSObject <NSCopying>
 
 @property(nonatomic, assign) bool encrypted;
 @property(nonatomic, assign) bool list;
 @property(nonatomic, strong) NSString* archivePath;
-@property(nonatomic, strong) NSString* outputDirectory;
+@property(nonatomic, strong) NSString* outputPath;
+@property(nonatomic, assign) bool decryptOnly;
 @property(nonatomic, strong) NSData* key;
 @property(nonatomic, strong) NSString* filter;
 @property(nonatomic, strong) NSRegularExpression* regex;
+@property(nonatomic, assign) bool network;
+@property(nonatomic, strong) NSData* unwrapKey;
+@property(nonatomic, assign) PrivateKeyFormat unwrapKeyFormat;
 
 @property(nonatomic, strong) NSString* function;
 

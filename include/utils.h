@@ -2,7 +2,6 @@
 #define UTILS_H
 
 #import <Foundation/Foundation.h>
-#import <objc/NSObjCRuntime.h>
 #import <stdio.h>
 
 #define LOG(format, ...) printf("%s\n", [[NSString stringWithFormat:format, ##__VA_ARGS__] UTF8String])
@@ -20,6 +19,8 @@
     #define NAME @"aastuff"
 #endif
 
-#define VERSION @"1.0.0"
+#define VERSION @"2.0.0"
+
+NSData* makeSynchronousRequest(NSURLRequest* request, NSHTTPURLResponse** response, NSError** error);
 
 #endif /* UTILS_H */

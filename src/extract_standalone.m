@@ -235,19 +235,18 @@ int extractAssetStandalone(AAByteStream byteStream, ExtractionConfiguration* con
                     break;
                 }
 
+                CFTypeRef configCopy = CFBridgingRetain([config copyWithFunction:(yop == AA_YOP_TYPE_DST_FIXUP ? @"VERIFY" : @"EXTRACT")]);
+
                 // TODO: What is the difference between these two?
                 // TODO: Magic constant
-                // TODO: CFBridgingRetain will leak
                 AAArchiveStream extractStream =
                     yop == AA_YOP_TYPE_DST_FIXUP
-                        ? AAVerifyDirectoryArchiveOutputStreamOpen(config.outputDirectory.UTF8String, keySet,
-                                                                   (void*)CFBridgingRetain([config copyWithFunction:@"VERIFY"]),
-                                                                   aa_callback, UINT64_C(1) << 53, 0)
-                        : AAExtractArchiveOutputStreamOpen(config.outputDirectory.UTF8String,
-                                                           (void*)CFBridgingRetain([config copyWithFunction:@"EXTRACT"]), aa_callback, 0,
-                                                           0);
+                        ? AAVerifyDirectoryArchiveOutputStreamOpen(config.outputPath.UTF8String, keySet, (void*)configCopy, aa_callback,
+                                                                   UINT64_C(1) << 53, 0)
+                        : AAExtractArchiveOutputStreamOpen(config.outputPath.UTF8String, (void*)configCopy, aa_callback, 0, 0);
                 if (!extractStream) {
                     ERRLOG(@"Failed to open extract stream");
+                    CFRelease(configCopy);
                     AAArchiveStreamClose(innerDecodeStream);
                     AAByteStreamClose(decompressStream);
                     AAByteStreamClose(datStream);
@@ -258,6 +257,7 @@ int extractAssetStandalone(AAByteStream byteStream, ExtractionConfiguration* con
                                            aa_callback, 0, 0) < 0) {
                     ERRLOG(@"Failed to process archive stream");
                     AAArchiveStreamClose(extractStream);
+                    CFRelease(configCopy);
                     AAArchiveStreamClose(innerDecodeStream);
                     AAByteStreamClose(decompressStream);
                     AAByteStreamClose(datStream);
@@ -265,6 +265,7 @@ int extractAssetStandalone(AAByteStream byteStream, ExtractionConfiguration* con
                 }
 
                 AAArchiveStreamClose(extractStream);
+                CFRelease(configCopy);
                 AAArchiveStreamClose(innerDecodeStream);
                 AAByteStreamClose(decompressStream);
                 AAByteStreamClose(datStream);
