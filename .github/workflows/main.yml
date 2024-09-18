@@ -33,6 +33,19 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Clean up storage
+        run: |
+          mkdir empty_dir
+          if [ -d "/Applications/Xcode_14.3.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_14.3.1.app/
+          fi
+          if [ -d "/Applications/Xcode_14.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_14.1.app/
+          fi
+          if [ -d "/Applications/Xcode_13.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_13.1.app/
+          fi
+          rsync -a --delete empty_dir/ /Users/runner/Library/Android/sdk/
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -71,6 +84,19 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Clean up storage
+        run: |
+          mkdir empty_dir
+          if [ -d "/Applications/Xcode_14.3.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_14.3.1.app/
+          fi
+          if [ -d "/Applications/Xcode_14.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_14.1.app/
+          fi
+          if [ -d "/Applications/Xcode_13.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_13.1.app/
+          fi
+          rsync -a --delete empty_dir/ /Users/runner/Library/Android/sdk/
       - uses: actions/checkout@v4
       - name: Cache test files
         id: cache
