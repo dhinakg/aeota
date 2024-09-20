@@ -5,6 +5,7 @@
 #import "args.h"
 #import "extract.h"
 #import "extract_standalone.h"
+#import "network.h"
 #import "utils.h"
 
 int main(int argc, char** argv) {
@@ -19,10 +20,20 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        AAByteStream stream = AAFileStreamOpenWithPath(config.archivePath.UTF8String, O_RDONLY, 0644);
-        if (!stream) {
-            ERRLOG(@"Failed to open archive file stream");
-            return 1;
+        AAByteStream stream = NULL;
+        if (config.remote) {
+            stream = remote_archive_open(config.archivePath);
+            if (!stream) {
+                ERRLOG(@"Failed to open remote archive file stream");
+                return 1;
+            }
+
+        } else {
+            stream = AAFileStreamOpenWithPath(config.archivePath.UTF8String, O_RDONLY, 0644);
+            if (!stream) {
+                ERRLOG(@"Failed to open archive file stream");
+                return 1;
+            }
         }
 
         AAByteStream decryptionStream = NULL;

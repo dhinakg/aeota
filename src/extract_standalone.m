@@ -83,10 +83,17 @@ static inline NSString* messageToString(AAEntryMessage message) {
 }
 #endif
 
+static bool done = false;
+
 static int aa_callback(void* arg, AAEntryMessage message, const char* path, void* data) {
     ExtractionConfiguration* config = (__bridge ExtractionConfiguration*)arg;
 
     DBGLOG(@"[%@] Message: %@ (%d), Path: %s", config.function, messageToString(message), message, path);
+
+    if (done) {
+        DBGLOG(@"[%@] Done", config.function);
+        return -1;
+    }
 
     if (config.regex) {
         NSUInteger ret = [config.regex numberOfMatchesInString:[NSString stringWithUTF8String:path] options:0
@@ -116,6 +123,11 @@ static int aa_callback(void* arg, AAEntryMessage message, const char* path, void
             // Skip all other steps of extraction
             return 1;
         }
+    }
+
+    if (message == AA_ENTRY_MESSAGE_EXTRACT_END && config.exitEarly) {
+        DBGLOG(@"[%@] Path: %s finished, exiting early", config.function, path);
+        done = true;
     }
 
     // Continue
@@ -192,7 +204,7 @@ int extractAssetStandalone(AAByteStream byteStream, ExtractionConfiguration* con
             continue;
         }
 
-        DBGLOG(@"Processing %c entry", (char)yop);
+        DBGLOG(@"Processing %c [%s] entry", (char)yop, lbl);
 
         if (yop == AA_YOP_TYPE_EXTRACT || yop == AA_YOP_TYPE_DST_FIXUP) {
             if (config.list && yop == AA_YOP_TYPE_DST_FIXUP) {
@@ -255,7 +267,11 @@ int extractAssetStandalone(AAByteStream byteStream, ExtractionConfiguration* con
 
                 if (AAArchiveStreamProcess(innerDecodeStream, extractStream, (void*)CFBridgingRetain([config copyWithFunction:@"PROCESS"]),
                                            aa_callback, 0, 0) < 0) {
-                    ERRLOG(@"Failed to process archive stream");
+                    if (done) {
+                        DBGLOG(@"Done processing");
+                    } else {
+                        ERRLOG(@"Failed to process archive stream");
+                    }
                     AAArchiveStreamClose(extractStream);
                     CFRelease(configCopy);
                     AAArchiveStreamClose(innerDecodeStream);

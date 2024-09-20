@@ -15,9 +15,11 @@ typedef NS_ENUM(NSInteger, PrivateKeyFormat) {
 
 @property(nonatomic, assign) bool encrypted;
 @property(nonatomic, assign) bool list;
+@property(nonatomic, assign) bool remote;
 @property(nonatomic, strong) NSString* archivePath;
 @property(nonatomic, strong) NSString* outputPath;
 @property(nonatomic, assign) bool decryptOnly;
+@property(nonatomic, assign) bool exitEarly;
 @property(nonatomic, strong) NSData* key;
 @property(nonatomic, strong) NSString* filter;
 @property(nonatomic, strong) NSRegularExpression* regex;
