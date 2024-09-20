@@ -19,8 +19,10 @@
     #define NAME @"aastuff"
 #endif
 
-#define VERSION @"2.0.0"
+#define VERSION @"2.1.0"
 
+NSData* makeSynchronousRequestWithSession(NSURLSession* session, NSURLRequest* request, NSHTTPURLResponse** response, NSError** error);
 NSData* makeSynchronousRequest(NSURLRequest* request, NSHTTPURLResponse** response, NSError** error);
+NSData* getRange(NSString* url, NSRange range, NSError** error);
 
 #endif /* UTILS_H */

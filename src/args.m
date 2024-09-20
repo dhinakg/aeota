@@ -3,6 +3,7 @@
 #import <Foundation/Foundation.h>
 #import <getopt.h>
 
+#import "network.h"
 #import "utils.h"
 
 #define APPLE_ARCHIVE_MAGIC @"AA01"
@@ -32,6 +33,8 @@ static void usage(void) {
     ERRLOG(@"      Filter files by glob pattern");
     ERRLOG(@"  -r, --regex <pattern>");
     ERRLOG(@"      Filter files by regex pattern");
+    ERRLOG(@"  -e, --exit-early");
+    ERRLOG(@"      Exit early after extracting the first matching file");
 #endif
     ERRLOG(@"Key Options:");
     ERRLOG(@"  -k, --key <base64>");
@@ -65,6 +68,7 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
         #if AASTUFF_STANDALONE
         {"filter", required_argument, 0, 'f'},
         {"regex", required_argument, 0, 'r'},
+        {"exit-early", no_argument, 0, 'e'},
         #endif
         {"key", required_argument, 0, 'k'},
         {"key-file", required_argument, 0, 'K'},
@@ -82,6 +86,7 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
     int c;
 
     bool list = false;
+    bool remote = false;
     NSString* archivePath = nil;
     NSString* outputPath = nil;
     bool decryptOnly = false;
@@ -89,12 +94,13 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
     NSString* keyPath = nil;
     NSString* filter = nil;
     NSString* regexString = nil;
+    bool exitEarly = false;
     bool network = false;
     NSString* unwrapKeyBase64 = nil;
     NSString* unwrapKeyPath = nil;
     NSString* unwrapKeyFormatString = nil;
 
-    while ((c = getopt_long(argc, argv, "-i:o:ldhvf:r:k:K:u:U:n", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "-i:o:ldhvf:r:ek:K:u:U:n", long_options, &option_index)) != -1) {
         switch (c) {
             case 'i':
                 archivePath = [NSString stringWithUTF8String:optarg];
@@ -124,6 +130,9 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
                 break;
             case 'r':
                 regexString = [NSString stringWithUTF8String:optarg];
+                break;
+            case 'e':
+                exitEarly = true;
                 break;
 #endif
             case 'k':
@@ -159,6 +168,10 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
         usage();
         *returnCode = 1;
         return nil;
+    }
+
+    if ([@[@"http", @"https"] containsObject:[NSURL URLWithString:archivePath].scheme]) {
+        remote = true;
     }
 
     if (!list && !outputPath) {
@@ -292,9 +305,11 @@ ExtractionConfiguration* parseArgs(int argc, char** argv, int* returnCode) {
 
     ExtractionConfiguration* config = [[ExtractionConfiguration alloc] init];
     config.list = list;
+    config.remote = remote;
     config.archivePath = archivePath;
     config.outputPath = outputPath;
     config.decryptOnly = decryptOnly;
+    config.exitEarly = exitEarly;
     config.key = key;
     config.filter = filter;
     config.regex = regex;
@@ -309,9 +324,16 @@ int validateArgs(ExtractionConfiguration* config) {
     NSError* error = nil;
     NSFileManager* fileManager = [NSFileManager defaultManager];
 
-    if (![fileManager fileExistsAtPath:config.archivePath]) {
-        ERRLOG(@"Archive does not exist");
-        return 1;
+    if (config.remote) {
+        if (!checkAlive(config.archivePath, &error)) {
+            ERRLOG(@"Failed to connect to server: %@", error);
+            return 1;
+        }
+    } else {
+        if (![fileManager fileExistsAtPath:config.archivePath]) {
+            ERRLOG(@"Archive does not exist");
+            return 1;
+        }
     }
 
     if (config.list) {
@@ -338,15 +360,21 @@ int validateArgs(ExtractionConfiguration* config) {
         }
     }
 
-    NSFileHandle* handle = [NSFileHandle fileHandleForReadingAtPath:config.archivePath];
-    if (!handle) {
-        ERRLOG(@"Failed to open archive file");
-        return 1;
-    }
+    NSData* magic = nil;
 
-    NSData* magic = [handle readDataUpToLength:4 error:&error];
-    // If this fails, can't do anything about it, so just ignore the error
-    [handle closeAndReturnError:nil];
+    if (config.remote) {
+        magic = getRange(config.archivePath, NSMakeRange(0, 4), &error);
+    } else {
+        NSFileHandle* handle = [NSFileHandle fileHandleForReadingAtPath:config.archivePath];
+        if (!handle) {
+            ERRLOG(@"Failed to open archive file");
+            return 1;
+        }
+
+        magic = [handle readDataUpToLength:4 error:&error];
+        // If this fails, can't do anything about it, so just ignore the error
+        [handle closeAndReturnError:nil];
+    }
 
     if (!magic || magic.length != 4) {
         ERRLOG(@"Failed to read magic: %@", error);
@@ -389,11 +417,17 @@ int validateArgs(ExtractionConfiguration* config) {
     ExtractionConfiguration* copy = [[ExtractionConfiguration alloc] init];
     copy.encrypted = self.encrypted;
     copy.list = self.list;
+    copy.remote = self.remote;
     copy.archivePath = self.archivePath;
     copy.outputPath = self.outputPath;
+    copy.decryptOnly = self.decryptOnly;
+    copy.exitEarly = self.exitEarly;
     copy.key = self.key;
     copy.filter = self.filter;
     copy.regex = self.regex;
+    copy.network = self.network;
+    copy.unwrapKey = self.unwrapKey;
+    copy.unwrapKeyFormat = self.unwrapKeyFormat;
 
     copy.function = self.function;
     return copy;
