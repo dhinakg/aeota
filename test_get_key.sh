@@ -4,7 +4,7 @@ set -e
 set -o pipefail
 
 # Use aa list instead of full decryption
-FAST=1
+FAST_ENABLED=1
 FAILED=0
 
 fail() {
@@ -35,6 +35,8 @@ for i in tests/*; do
 
     if [ -e "$TEST_DIR/fast_unsupported" ]; then
         FAST=0
+    else
+        FAST=$FAST_ENABLED
     fi
 
     mkdir -p "$TMP_DIR"
