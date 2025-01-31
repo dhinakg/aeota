@@ -9,13 +9,17 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-12, macos-13, macos-14]
+        os: [macos-13, macos-14, macos-15]
+        build_command: [make, make HPKE=1]
+        exclude:
+          - os: macos-15
+            build_command: make HPKE=1
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: make
+        run: ${{ matrix.build_command }}
       - name: Test binary
         run: |
           ./aastuff -h
@@ -29,7 +33,7 @@ jobs:
   test-get-key:
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: macos-latest
 
     steps:
