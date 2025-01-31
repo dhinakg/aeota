@@ -128,6 +128,30 @@ jobs:
           SMALL_TEST_KEY: ${{ vars.SMALL_TEST_KEY }}
           LARGE_TEST_KEY: ${{ vars.LARGE_TEST_KEY }}
       - name: Build
-        run: make
+        run: make HPKE=1
       - name: Run tests
         run: ./test_extract.sh
+
+  test-aastuff-network:
+    runs-on: macos-latest
+
+    steps:
+      - name: Clean up storage
+        run: |
+          mkdir empty_dir
+          if [ -d "/Applications/Xcode_14.3.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_14.3.1.app/
+          fi
+          if [ -d "/Applications/Xcode_14.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_14.1.app/
+          fi
+          if [ -d "/Applications/Xcode_13.1.app/" ]; then
+            rsync -a --delete empty_dir/ /Applications/Xcode_13.1.app/
+          fi
+          rsync -a --delete empty_dir/ /Users/runner/Library/Android/sdk/
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make HPKE=1
+      - name: Run tests
+        run: |
+          ./aastuff_standalone -i 'https://updates.cdn-apple.com/2024SummerSeed/mobileassets/052-49061/CA7135A8-BAF6-4890-887C-35FB30C154D5/com_apple_MobileAsset_MacSoftwareUpdate/e2de87f20576b2bdc021d36f74a2f836cf42afe576178388dfd0cde875f4f979.aea' -l -n
