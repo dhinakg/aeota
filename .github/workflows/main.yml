@@ -27,7 +27,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macOS artifacts for ${{ matrix.os }}
+          name: macOS artifacts for ${{ matrix.os }}/${{ matrix.build_command }}
           path: aastuff*
 
   test-get-key:
