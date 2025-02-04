@@ -12,7 +12,7 @@ jobs:
         os: [macos-13, macos-14, macos-15]
         build_command: [make, make HPKE=1]
         exclude:
-          - os: macos-15
+          - os: macos-13
             build_command: make HPKE=1
     runs-on: ${{ matrix.os }}
 
