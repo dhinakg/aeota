@@ -86,6 +86,7 @@ jobs:
 
   test-aastuff:
     runs-on: macos-latest
+    needs: build
 
     steps:
       - name: Clean up storage
@@ -134,6 +135,7 @@ jobs:
 
   test-aastuff-network:
     runs-on: macos-latest
+    needs: build
 
     steps:
       - name: Clean up storage
