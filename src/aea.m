@@ -71,6 +71,30 @@ int fetchKey(AEAContext context, ExtractionConfiguration* config) {
 
     DBGLOG(@"Auth data: %@", authData);
 
+    if (authData[@"encryption_key"]) {
+        DBGLOG(@"Auth data contains encryption key, skipping fetch");
+        // This is encoded as a hex string, convert it to NSData
+        NSString* hexString = [[NSString alloc] initWithData:authData[@"encryption_key"] encoding:NSUTF8StringEncoding];
+        if (!hexString) {
+            ERRLOG(@"Failed to decode hex string");
+            return 1;
+        }
+        NSMutableData* data = [NSMutableData dataWithCapacity:hexString.length / 2];
+        for (int i = 0; i < hexString.length; i += 2) {
+            NSString* byteString = [hexString substringWithRange:NSMakeRange(i, 2)];
+            unsigned int byteValue;
+            [[NSScanner scannerWithString:byteString] scanHexInt:&byteValue];
+            [data appendBytes:&byteValue length:1];
+        }
+        config.key = data;
+        DBGLOG(@"Encryption key: %@", config.key);
+        if (!config.key) {
+            ERRLOG(@"Failed to decode encryption key");
+            return 1;
+        }
+        return 0;
+    }
+
     NSData* urlData = authData[@"com.apple.wkms.fcs-key-url"];
     if (!urlData) {
         ERRLOG(@"Auth data is missing required metadata (FCS key URL)");
