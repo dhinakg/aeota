@@ -1,10 +1,10 @@
 .PHONY: all clean test deploy
 
-SRC_FILES = src/aastuff.m src/aea.m src/args.m src/extract.m src/extract_standalone.m src/utils.m
+SRC_FILES = src/aastuff.m src/aea.m src/args.m src/extract.m src/extract_standalone.m src/network.m src/utils.m
 SRC_FILES_SWIFT =
 OBJ_FILES_SWIFT = $(patsubst src/%.swift,obj/%.o,$(SRC_FILES_SWIFT))
 HDR_FILES = include/AppleArchivePrivate.h include/OSISAEAExtractor.h \
-	include/aea.h include/args.h include/extract.h include/extract_standalone.h include/utils.h $(HDR_SWIFT)
+	include/aea.h include/args.h include/extract.h include/extract_standalone.h include/network.h include/utils.h $(HDR_SWIFT)
 
 CFLAGS = -fmodules -fobjc-arc -Iinclude -Iobj -Wall -Werror -Wunreachable-code
 LDLIBS = -framework Foundation -lAppleArchive
